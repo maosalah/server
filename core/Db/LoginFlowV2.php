@@ -39,6 +39,8 @@ use OCP\AppFramework\Db\Entity;
  * @method void setPublicKey(string $key)
  * @method string getPrivateKey()
  * @method void setPrivateKey(string $key)
+ * @method string getClientName()
+ * @method void setClientName(string $clientName)
  * @method string getLoginName()
  * @method void setLoginName(string $loginName)
  * @method string getServer()

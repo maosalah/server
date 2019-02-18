@@ -28,6 +28,7 @@ use OC\Authentication\Exceptions\InvalidTokenException;
 use OC\Authentication\Exceptions\PasswordlessTokenException;
 use OC\Authentication\Token\IProvider;
 use OC\Authentication\Token\IToken;
+use OC\Core\Db\LoginFlowV2;
 use OC\Core\Exception\LoginFlowV2NotFoundException;
 use OC\Core\Service\LoginFlowV2Service;
 use OCP\AppFramework\Controller;
@@ -109,8 +110,10 @@ class ClientFlowLoginV2Controller extends Controller {
 	 * @PublicPage
 	 * @UseSession
 	 */
-	public function showAuthPickerPage() {
-		if (!$this->isValidLoginToken()) {
+	public function showAuthPickerPage(): StandaloneTemplateResponse {
+		try {
+			$flow = $this->getFlowByLoginToken();
+		} catch (LoginFlowV2NotFoundException $e) {
 			return $this->loginTokenForbiddenResponse();
 		}
 
@@ -124,7 +127,7 @@ class ClientFlowLoginV2Controller extends Controller {
 			$this->appName,
 			'loginflowv2/authpicker',
 			[
-				'client' => 'AWESOME CLIENT', //TODO fix name
+				'client' => $flow->getClientName(),
 				'instanceName' => $this->defaults->getName(),
 				'urlGenerator' => $this->urlGenerator,
 				'stateToken' => $this->session->get(self::stateName),
@@ -161,7 +164,9 @@ class ClientFlowLoginV2Controller extends Controller {
 			return $this->stateTokenForbiddenResponse();
 		}
 
-		if (!$this->isValidLoginToken()) {
+		try {
+			$flow = $this->getFlowByLoginToken();
+		} catch (LoginFlowV2NotFoundException $e) {
 			return $this->loginTokenForbiddenResponse();
 		}
 
@@ -169,7 +174,7 @@ class ClientFlowLoginV2Controller extends Controller {
 			$this->appName,
 			'loginflowv2/grant',
 			[
-				'client' => 'AWESOME CLIENT',
+				'client' => $flow->getClientName(),
 				'instanceName' => $this->defaults->getName(),
 				'urlGenerator' => $this->urlGenerator,
 				'stateToken' => $stateToken,
@@ -187,7 +192,9 @@ class ClientFlowLoginV2Controller extends Controller {
 			return $this->stateTokenForbiddenResponse();
 		}
 
-		if (!$this->isValidLoginToken()) {
+		try {
+			$flow = $this->getFlowByLoginToken();
+		} catch (LoginFlowV2NotFoundException $e) {
 			return $this->loginTokenForbiddenResponse();
 		}
 
@@ -221,12 +228,12 @@ class ClientFlowLoginV2Controller extends Controller {
 
 		$token = $this->random->generate(72, ISecureRandom::CHAR_UPPER.ISecureRandom::CHAR_LOWER.ISecureRandom::CHAR_DIGITS);
 		$uid = $this->userSession->getUser()->getUID();
-		$generatedToken = $this->tokenProvider->generateToken(
+		$this->tokenProvider->generateToken(
 			$token,
 			$uid,
 			$loginName,
 			$password,
-			'AWESOME CLIENT', // TODO fixme!
+			$flow->getClientName(),
 			IToken::PERMANENT_TOKEN,
 			IToken::DO_NOT_REMEMBER
 		);
@@ -250,8 +257,11 @@ class ClientFlowLoginV2Controller extends Controller {
 	 * TODO: rate limiting
 	 */
 	public function init(): JSONResponse {
+		// Get client user agent
+		$userAgent = $this->request->getHeader('USER_AGENT');
+
 		//TODO: catch errors
-		$tokens = $this->loginFlowV2Service->createTokens();
+		$tokens = $this->loginFlowV2Service->createTokens($userAgent);
 
 		$data = [
 			'poll' => [
@@ -285,13 +295,17 @@ class ClientFlowLoginV2Controller extends Controller {
 		return $response;
 	}
 
-	private function isValidLoginToken(): bool {
+	/**
+	 * @return LoginFlowV2
+	 * @throws LoginFlowV2NotFoundException
+	 */
+	private function getFlowByLoginToken(): LoginFlowV2 {
 		$currentToken = $this->session->get(self::tokenName);
 		if(!is_string($currentToken)) {
-			return false;
+			throw new LoginFlowV2NotFoundException('Login token not set in session');
 		}
 
-		return $this->loginFlowV2Service->isLoginTokenValid($currentToken);
+		return $this->loginFlowV2Service->getByLoginToken($currentToken);
 	}
 
 	private function loginTokenForbiddenResponse(): StandaloneTemplateResponse {
@@ -318,7 +332,7 @@ class ClientFlowLoginV2Controller extends Controller {
 
 		$protocol = $this->request->getServerProtocol();
 
-		if ($protocol !== "https") {
+		if ($protocol !== 'https') {
 			$xForwardedProto = $this->request->getHeader('X-Forwarded-Proto');
 			$xForwardedSSL = $this->request->getHeader('X-Forwarded-Ssl');
 			if ($xForwardedProto === 'https' || $xForwardedSSL === 'on') {
@@ -326,6 +340,6 @@ class ClientFlowLoginV2Controller extends Controller {
 			}
 		}
 
-		return $protocol . "://" . $this->request->getServerHost() . $serverPostfix;
+		return $protocol . '://' . $this->request->getServerHost() . $serverPostfix;
 	}
 }

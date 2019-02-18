@@ -65,11 +65,16 @@ class LoginFlowV2Service {
 		$this->logger = $logger;
 	}
 
+	/**
+	 * @param string $pollToken
+	 * @return LoginFlowV2Credentials
+	 * @throws LoginFlowV2NotFoundException
+	 */
 	public function poll(string $pollToken): LoginFlowV2Credentials {
 		try {
 			$data = $this->mapper->getByPollToken($this->hashToken($pollToken));
 		} catch (DoesNotExistException $e) {
-			throw new LoginFlowV2NotFoundException();
+			throw new LoginFlowV2NotFoundException('Invalid token');
 		}
 
 		$loginName = $data->getLoginName();
@@ -77,7 +82,7 @@ class LoginFlowV2Service {
 		$appPassword = $data->getAppPassword();
 
 		if ($loginName === null || $server === null || $appPassword === null) {
-			throw new LoginFlowV2NotFoundException();
+			throw new LoginFlowV2NotFoundException('Token not yet ready');
 		}
 
 		// Remove the data from the DB
@@ -88,18 +93,22 @@ class LoginFlowV2Service {
 			$privateKey = $this->crypto->decrypt($data->getPrivateKey(), $pollToken);
 			$appPassword = $this->decryptPassword($data->getAppPassword(), $privateKey);
 		} catch (\Exception $e) {
-			throw new LoginFlowV2NotFoundException();
+			throw new LoginFlowV2NotFoundException('Apptoken could not be decrypted');
 		}
 
 		return new LoginFlowV2Credentials($server, $loginName, $appPassword);
 	}
 
-	public function isLoginTokenValid(string $loginToken): bool {
+	/**
+	 * @param string $loginToken
+	 * @return LoginFlowV2
+	 * @throws LoginFlowV2NotFoundException
+	 */
+	public function getByLoginToken(string $loginToken): LoginFlowV2 {
 		try {
-			$this->mapper->getByLoginToken($loginToken);
-			return true;
+			return $this->mapper->getByLoginToken($loginToken);
 		} catch (DoesNotExistException $e) {
-			return false;
+			throw new LoginFlowV2NotFoundException('Login token invalid');
 		}
 	}
 
@@ -107,7 +116,7 @@ class LoginFlowV2Service {
 	 * @param string $loginToken
 	 * @return bool returns true if the start was successfull. False if not.
 	 */
-	public function startLoginFlow(string $loginToken) {
+	public function startLoginFlow(string $loginToken): bool {
 		try {
 			$data = $this->mapper->getByLoginToken($loginToken);
 		} catch (DoesNotExistException $e) {
@@ -124,6 +133,13 @@ class LoginFlowV2Service {
 		return true;
 	}
 
+	/**
+	 * @param string $loginToken
+	 * @param string $server
+	 * @param string $loginName
+	 * @param string $appPassword
+	 * @return bool true if the flow was successfully completed false otherwise
+	 */
 	public function flowDone(string $loginToken, string $server, string $loginName, string $appPassword): bool {
 		try {
 			$data = $this->mapper->getByLoginToken($loginToken);
@@ -141,7 +157,7 @@ class LoginFlowV2Service {
 		return true;
 	}
 
-	public function createTokens(): LoginFlowV2Tokens {
+	public function createTokens(string $userAgent): LoginFlowV2Tokens {
 		$flow = new LoginFlowV2();
 		$pollToken = $this->random->generate(128, ISecureRandom::CHAR_DIGITS.ISecureRandom::CHAR_LOWER.ISecureRandom::CHAR_UPPER);
 		$loginToken = $this->random->generate(128, ISecureRandom::CHAR_DIGITS.ISecureRandom::CHAR_LOWER.ISecureRandom::CHAR_UPPER);
@@ -149,6 +165,7 @@ class LoginFlowV2Service {
 		$flow->setLoginToken($loginToken);
 		$flow->setStarted(0);
 		$flow->setTimestamp($this->time->getTime());
+		$flow->setClientName($userAgent);
 
 		[$publicKey, $privateKey] = $this->getKeyPair();
 		$privateKey = $this->crypto->encrypt($privateKey, $pollToken);
@@ -188,7 +205,7 @@ class LoginFlowV2Service {
 		return [$publicKey, $privateKey];
 	}
 
-	private function logOpensslError() {
+	private function logOpensslError(): void {
 		$errors = [];
 		while ($error = openssl_error_string()) {
 			$errors[] = $error;
