@@ -74,6 +74,16 @@ class LoginFlowV2Mapper extends QBMapper {
 		return $this->validateTimestamp($entity);
 	}
 
+	public function cleanup(): void {
+		$qb = $this->db->getQueryBuilder();
+		$qb->delete($this->getTableName())
+			->where(
+				$qb->expr()->lt('timestamp', $qb->createNamedParameter($this->timeFactory->getTime() - self::lifetime))
+			);
+
+		$qb->execute();
+	}
+
 	/**
 	 * @param LoginFlowV2 $flowV2
 	 * @return LoginFlowV2
