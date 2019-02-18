@@ -13,8 +13,8 @@ OC.L10N.register(
     "Close" : "Užverti",
     "Could not create folder \"{dir}\"" : "Nepavyko sukurti aplanko \"{dir}\"",
     "Upload cancelled." : "Įkėlimo atsisakyta.",
-    "…" : "…",
     "Processing files …" : "Apdorojami failai …",
+    "…" : "…",
     "Unable to upload {filename} as it is a directory or has 0 bytes" : "Nepavyksta įkelti {filename}, nes tai yra katalogas arba šio failo dydis yra 0 baitų",
     "Not enough free space, you are uploading {size1} but only {size2} is left" : "Nepakanka laisvos vietos. Jūs bandote įkelti {size1} dydžio bylą, bet liko tik  {size2} vietos",
     "Target folder \"{dir}\" does not exist any more" : "Paskirties aplanko \"{dir}\" daugiau nebėra",
@@ -33,7 +33,7 @@ OC.L10N.register(
     "Select" : "Pasirinkti",
     "Unable to determine date" : "Nepavyksta nustatyti datos",
     "This operation is forbidden" : "Ši operacija yra uždrausta",
-    "This directory is unavailable, please check the logs or contact the administrator" : "Katalogas neprieinamas, prašome peržiūrėti žurnalo įrašus arba susisiekti su administratoriumi",
+    "This directory is unavailable, please check the logs or contact the administrator" : "Šis katalogas neprieinamas, prašome peržiūrėti žurnalo įrašus arba susisiekti su administratoriumi",
     "Could not move \"{file}\", target exists" : "Nepavyko perkelti \"{file}\", toks jau egzistuoja",
     "Could not move \"{file}\"" : "Nepavyko perkelti \"{file}\"",
     "copy" : "kopija",
@@ -119,7 +119,6 @@ OC.L10N.register(
     "Settings" : "Nustatymai",
     "Show hidden files" : "Rodyti paslėptus failus",
     "WebDAV" : "WebDAV",
-    "Cancel upload" : "Atsisakyti įkėlimo",
     "No files in here" : "Čia failų nėra",
     "No entries found in this folder" : "Nerasta įrašų šiame aplanke",
     "Select all" : "Pažymėti viską",
@@ -131,6 +130,7 @@ OC.L10N.register(
     "Deleted shares" : "Ištrinti viešiniai",
     "Text file" : "Tekstinis failas",
     "New text file.txt" : "Naujas tekstinis failas.txt",
-    "Target folder" : "Paskirties aplankas"
+    "Target folder" : "Paskirties aplankas",
+    "Cancel upload" : "Atsisakyti įkėlimo"
 },
 "nplurals=4; plural=(n % 10 == 1 && (n % 100 > 19 || n % 100 < 11) ? 0 : (n % 10 >= 2 && n % 10 <=9) && (n % 100 > 19 || n % 100 < 11) ? 1 : n % 1 != 0 ? 2: 3);");
