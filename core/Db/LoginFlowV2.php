@@ -60,6 +60,8 @@ class LoginFlowV2 extends Entity {
 	/** @var string */
 	protected $privateKey;
 	/** @var string */
+	protected $clientName;
+	/** @var string */
 	protected $loginName;
 	/** @var string */
 	protected $server;
@@ -73,6 +75,7 @@ class LoginFlowV2 extends Entity {
 		$this->addType('loginToken', 'string');
 		$this->addType('publicKey', 'string');
 		$this->addType('privateKey', 'string');
+		$this->addType('clientName', 'string');
 		$this->addType('loginName', 'string');
 		$this->addType('server', 'string');
 		$this->addType('appPassword', 'string');

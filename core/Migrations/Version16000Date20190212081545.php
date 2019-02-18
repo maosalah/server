@@ -75,6 +75,10 @@ class Version16000Date20190212081545 extends SimpleMigrationStep {
 			'notnull' => true,
 			'length' => 32768,
 		]);
+		$table->addColumn('client_name', Type::STRING, [
+			'notnull' => true,
+			'length' => 255,
+		]);
 		$table->addColumn('login_name', Type::STRING, [
 			'notnull' => false,
 			'length' => 255,
