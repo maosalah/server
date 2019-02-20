@@ -24,10 +24,6 @@ declare(strict_types=1);
 
 namespace OC\Core\Controller;
 
-use OC\Authentication\Exceptions\InvalidTokenException;
-use OC\Authentication\Exceptions\PasswordlessTokenException;
-use OC\Authentication\Token\IProvider;
-use OC\Authentication\Token\IToken;
 use OC\Core\Db\LoginFlowV2;
 use OC\Core\Exception\LoginFlowV2NotFoundException;
 use OC\Core\Service\LoginFlowV2Service;
@@ -59,8 +55,6 @@ class ClientFlowLoginV2Controller extends Controller {
 	private $random;
 	/** @var Defaults */
 	private $defaults;
-	/** @var IProvider */
-	private $tokenProvider;
 	/** @var string */
 	private $userId;
 	/** @var IL10N */
@@ -73,7 +67,6 @@ class ClientFlowLoginV2Controller extends Controller {
 								ISession $session,
 								ISecureRandom $random,
 								Defaults $defaults,
-								IProvider $tokenProvider,
 								?string $userId,
 								IL10N $l10n) {
 		parent::__construct($appName, $request);
@@ -82,7 +75,6 @@ class ClientFlowLoginV2Controller extends Controller {
 		$this->session = $session;
 		$this->random = $random;
 		$this->defaults = $defaults;
-		$this->tokenProvider = $tokenProvider;
 		$this->userId = $userId;
 		$this->l10n = $l10n;
 	}
@@ -191,7 +183,7 @@ class ClientFlowLoginV2Controller extends Controller {
 		}
 
 		try {
-			$flow = $this->getFlowByLoginToken();
+			$this->getFlowByLoginToken();
 		} catch (LoginFlowV2NotFoundException $e) {
 			return $this->loginTokenForbiddenResponse();
 		}
@@ -203,39 +195,27 @@ class ClientFlowLoginV2Controller extends Controller {
 		$this->session->remove(self::stateName);
 		$sessionId = $this->session->getId();
 
-		try {
-			$sessionToken = $this->tokenProvider->getToken($sessionId);
-			$loginName = $sessionToken->getLoginName();
-			try {
-				$password = $this->tokenProvider->getPassword($sessionToken, $sessionId);
-			} catch (PasswordlessTokenException $ex) {
-				$password = null;
-			}
-		} catch (InvalidTokenException $ex) {
-			$response = new Response();
-			$response->setStatus(Http::STATUS_FORBIDDEN);
-			return $response;
+		$result = $this->loginFlowV2Service->flowDone($loginToken, $sessionId, $this->getServerPath(), $this->userId);
+
+		if ($result) {
+			return new StandaloneTemplateResponse(
+				$this->appName,
+				'loginflowv2/done',
+				[],
+				'guest'
+			);
 		}
 
-		$token = $this->random->generate(72, ISecureRandom::CHAR_UPPER.ISecureRandom::CHAR_LOWER.ISecureRandom::CHAR_DIGITS);
-		$this->tokenProvider->generateToken(
-			$token,
-			$this->userId,
-			$loginName,
-			$password,
-			$flow->getClientName(),
-			IToken::PERMANENT_TOKEN,
-			IToken::DO_NOT_REMEMBER
-		);
-
-		$this->loginFlowV2Service->flowDone($loginToken, $this->getServerPath(), $loginName, $token);
-
-		return new StandaloneTemplateResponse(
+		$response = new StandaloneTemplateResponse(
 			$this->appName,
-			'loginflowv2/done',
-			[],
+			'403',
+			[
+				'message' => $this->l10n->t('Could not complete login'),
+			],
 			'guest'
 		);
+		$response->setStatus(Http::STATUS_FORBIDDEN);
+		return $response;
 	}
 
 	/**

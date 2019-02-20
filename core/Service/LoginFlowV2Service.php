@@ -24,6 +24,10 @@ declare(strict_types=1);
 
 namespace OC\Core\Service;
 
+use OC\Authentication\Exceptions\InvalidTokenException;
+use OC\Authentication\Exceptions\PasswordlessTokenException;
+use OC\Authentication\Token\IProvider;
+use OC\Authentication\Token\IToken;
 use OC\Core\Data\LoginFlowV2Credentials;
 use OC\Core\Data\LoginFlowV2Tokens;
 use OC\Core\Db\LoginFlowV2;
@@ -50,19 +54,23 @@ class LoginFlowV2Service {
 	private $crypto;
 	/** @var ILogger */
 	private $logger;
+	/** @var IProvider */
+	private $tokenProvider;
 
 	public function __construct(LoginFlowV2Mapper $mapper,
 								ISecureRandom $random,
 								ITimeFactory $time,
 								IConfig $config,
 								ICrypto $crypto,
-								ILogger $logger) {
+								ILogger $logger,
+								IProvider $tokenProvider) {
 		$this->mapper = $mapper;
 		$this->random = $random;
 		$this->time = $time;
 		$this->config = $config;
 		$this->crypto = $crypto;
 		$this->logger = $logger;
+		$this->tokenProvider = $tokenProvider;
 	}
 
 	/**
@@ -135,17 +143,40 @@ class LoginFlowV2Service {
 
 	/**
 	 * @param string $loginToken
+	 * @param string $sessionId
 	 * @param string $server
-	 * @param string $loginName
-	 * @param string $appPassword
+	 * @param string $userId
 	 * @return bool true if the flow was successfully completed false otherwise
 	 */
-	public function flowDone(string $loginToken, string $server, string $loginName, string $appPassword): bool {
+	public function flowDone(string $loginToken, string $sessionId, string $server, string $userId): bool {
 		try {
 			$data = $this->mapper->getByLoginToken($loginToken);
 		} catch (DoesNotExistException $e) {
 			return false;
 		}
+
+		try {
+			$sessionToken = $this->tokenProvider->getToken($sessionId);
+			$loginName = $sessionToken->getLoginName();
+			try {
+				$password = $this->tokenProvider->getPassword($sessionToken, $sessionId);
+			} catch (PasswordlessTokenException $ex) {
+				$password = null;
+			}
+		} catch (InvalidTokenException $ex) {
+			return false;
+		}
+
+		$appPassword = $this->random->generate(72, ISecureRandom::CHAR_UPPER.ISecureRandom::CHAR_LOWER.ISecureRandom::CHAR_DIGITS);
+		$this->tokenProvider->generateToken(
+			$appPassword,
+			$userId,
+			$loginName,
+			$password,
+			$data->getClientName(),
+			IToken::PERMANENT_TOKEN,
+			IToken::DO_NOT_REMEMBER
+		);
 
 		$data->setLoginName($loginName);
 		$data->setServer($server);
