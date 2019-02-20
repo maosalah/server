@@ -42,9 +42,7 @@ use OCP\IL10N;
 use OCP\IRequest;
 use OCP\ISession;
 use OCP\IURLGenerator;
-use OCP\IUserSession;
 use OCP\Security\ISecureRandom;
-use OCP\Session\Exceptions\SessionNotAvailableException;
 
 class ClientFlowLoginV2Controller extends Controller {
 
@@ -203,14 +201,7 @@ class ClientFlowLoginV2Controller extends Controller {
 		// Clear session variables
 		$this->session->remove(self::tokenName);
 		$this->session->remove(self::stateName);
-
-		try {
-			$sessionId = $this->session->getId();
-		} catch (SessionNotAvailableException $ex) {
-			$response = new Response();
-			$response->setStatus(Http::STATUS_FORBIDDEN);
-			return $response;
-		}
+		$sessionId = $this->session->getId();
 
 		try {
 			$sessionToken = $this->tokenProvider->getToken($sessionId);
