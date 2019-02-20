@@ -63,8 +63,8 @@ class ClientFlowLoginV2Controller extends Controller {
 	private $defaults;
 	/** @var IProvider */
 	private $tokenProvider;
-	/** @var IUserSession */
-	private $userSession;
+	/** @var string */
+	private $userId;
 	/** @var IL10N */
 	private $l10n;
 
@@ -76,7 +76,7 @@ class ClientFlowLoginV2Controller extends Controller {
 								ISecureRandom $random,
 								Defaults $defaults,
 								IProvider $tokenProvider,
-								IUserSession $userSession,
+								?string $userId,
 								IL10N $l10n) {
 		parent::__construct($appName, $request);
 		$this->loginFlowV2Service = $loginFlowV2Service;
@@ -85,7 +85,7 @@ class ClientFlowLoginV2Controller extends Controller {
 		$this->random = $random;
 		$this->defaults = $defaults;
 		$this->tokenProvider = $tokenProvider;
-		$this->userSession = $userSession;
+		$this->userId = $userId;
 		$this->l10n = $l10n;
 	}
 
@@ -227,10 +227,9 @@ class ClientFlowLoginV2Controller extends Controller {
 		}
 
 		$token = $this->random->generate(72, ISecureRandom::CHAR_UPPER.ISecureRandom::CHAR_LOWER.ISecureRandom::CHAR_DIGITS);
-		$uid = $this->userSession->getUser()->getUID();
 		$this->tokenProvider->generateToken(
 			$token,
-			$uid,
+			$this->userId,
 			$loginName,
 			$password,
 			$flow->getClientName(),
