@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 /**
- * @copyright Copyright (c) 2018 Robin Appelman <robin@icewind.nl>
+ * @copyright Copyright (c) 2019 Robin Appelman <robin@icewind.nl>
  *
  * @license GNU AGPL version 3 or any later version
  *
@@ -19,31 +19,14 @@
  *
  */
 
-namespace Test\Files\Stream;
+namespace OCP\Files\Cache;
 
-use OC\Files\Stream\CountReadStream;
-use Test\TestCase;
+use OC\Files\Cache\AbstractCacheEvent;
 
-class CountReadStreamTest extends TestCase {
-	private function getStream($data) {
-		$handle = fopen('php://temp', 'w+');
-		fwrite($handle, $data);
-		rewind($handle);
-		return $handle;
-	}
-
-	public function testBasicCount() {
-		$source = $this->getStream('foo');
-		$stream = CountReadStream::wrap($source, function ($size) {
-			$this->assertEquals(3, $size);
-		});
-		stream_get_contents($stream);
-	}
-
-	public function testLarger() {
-		$stream = CountReadStream::wrap(fopen(__DIR__ . '/../../../data/testimage.mp4', 'r'), function ($size) {
-			$this->assertEquals(383631, $size);
-		});
-		stream_get_contents($stream);
-	}
+/**
+ * Event for when an existing entry in the cache gets updated
+ *
+ * @since 16.0.0
+ */
+class CacheUpdateEvent extends AbstractCacheEvent {
 }

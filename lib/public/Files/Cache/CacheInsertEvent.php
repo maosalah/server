@@ -21,52 +21,12 @@
 
 namespace OCP\Files\Cache;
 
-use OCP\Files\Storage\IStorage;
-use Symfony\Component\EventDispatcher\Event;
+use OC\Files\Cache\AbstractCacheEvent;
 
 /**
+ * Event for when a new entry gets added to the cache
+ *
  * @since 16.0.0
  */
-class CacheInsertEvent extends Event {
-	private $storage;
-	private $path;
-	private $fileId;
-
-	/**
-	 * CacheInsertEvent constructor.
-	 *
-	 * @param IStorage $storage
-	 * @param string $path
-	 * @param int $fileId
-	 * @since 16.0.0
-	 */
-	public function __construct(IStorage $storage, string $path, int $fileId) {
-		$this->storage = $storage;
-		$this->path = $path;
-		$this->fileId = $fileId;
-	}
-
-	/**
-	 * @return IStorage
-	 * @since 16.0.0
-	 */
-	public function getStorage(): IStorage {
-		return $this->storage;
-	}
-
-	/**
-	 * @return string
-	 * @since 16.0.0
-	 */
-	public function getPath(): string {
-		return $this->path;
-	}
-
-	/**
-	 * @return int
-	 * @since 16.0.0
-	 */
-	public function getFileId(): int {
-		return $this->fileId;
-	}
+class CacheInsertEvent extends AbstractCacheEvent {
 }
