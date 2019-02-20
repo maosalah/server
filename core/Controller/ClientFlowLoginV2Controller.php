@@ -245,21 +245,16 @@ class ClientFlowLoginV2Controller extends Controller {
 			[],
 			'guest'
 		);
-
-
 	}
 
 	/**
 	 * @NoCSRFRequired
 	 * @PublicPage
-	 *
-	 * TODO: rate limiting
 	 */
 	public function init(): JSONResponse {
 		// Get client user agent
 		$userAgent = $this->request->getHeader('USER_AGENT');
 
-		//TODO: catch errors
 		$tokens = $this->loginFlowV2Service->createTokens($userAgent);
 
 		$data = [
