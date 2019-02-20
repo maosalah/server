@@ -325,20 +325,11 @@ class ClientFlowLoginV2Controller extends Controller {
 
 		if (strpos($this->request->getRequestUri(), '/index.php') !== false) {
 			$serverPostfix = substr($this->request->getRequestUri(), 0, strpos($this->request->getRequestUri(), '/index.php'));
-		} else if (strpos($this->request->getRequestUri(), '/login/flow') !== false) {
+		} else if (strpos($this->request->getRequestUri(), '/login/v2') !== false) {
 			$serverPostfix = substr($this->request->getRequestUri(), 0, strpos($this->request->getRequestUri(), '/login/flow'));
 		}
 
 		$protocol = $this->request->getServerProtocol();
-
-		if ($protocol !== 'https') {
-			$xForwardedProto = $this->request->getHeader('X-Forwarded-Proto');
-			$xForwardedSSL = $this->request->getHeader('X-Forwarded-Ssl');
-			if ($xForwardedProto === 'https' || $xForwardedSSL === 'on') {
-				$protocol = 'https';
-			}
-		}
-
 		return $protocol . '://' . $this->request->getServerHost() . $serverPostfix;
 	}
 }
